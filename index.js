@@ -6,16 +6,21 @@ const testBlock = (name) => {
 };
 
 const compareArrays = (a, b) => {
+    if (a === b) {
+        return true;
+    }
     if (a.length !== b.length) {
         return false;
     }
     for (let i = 0; i < a.length; i++) {
-        if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-            if (!compareArrays(a[i], b[i])) {
+        if (a[i] !== b[i]) {
+            if (Array.isArray(a[i]) && Array.isArray(b[i])) {
+                if (!compareArrays(a[i], b[i])) {
+                    return false;
+                }
+            } else {
                 return false;
             }
-        } else if (a[i] !== b[i]) {
-            return false;
         }
     }
     return true;
@@ -24,10 +29,13 @@ const compareArrays = (a, b) => {
 const areEqual = (a, b) => {
     // Compare arrays of primitives
     // Remember: [] !== []
+    if (a === b) {
+        return true;
+    }
     if (Array.isArray(a) && Array.isArray(b)) {
         return compareArrays(a, b);
     }
-    return a === b;
+    return false;
 };
 
 const test = (whatWeTest, actualResult, expectedResult) => {
@@ -53,17 +61,17 @@ const getType = (value) => {
 const getTypesOfItems = (arr) => {
     // Return array with types of items of given array
     if (!Array.isArray(arr)) {
-        return [];
+        throw new TypeError('Passed parameter is not an array');
     }
-    return arr.map((item) => typeof item);
+    return arr.map((item) => getType(item));
 };
 
 const allItemsHaveTheSameType = (arr) => {
     // Return true if all items of array have the same type
     if (!Array.isArray(arr)) {
-        return false;
+        throw new TypeError('Passed parameter is not an array');
     }
-    if (arr.length === 0) {
+    if (arr.length <= 1) {
         return true;
     }
     const type = typeof arr[0];
@@ -85,7 +93,7 @@ const getRealType = (value) => {
     //     getRealType(NaN)        // 'NaN'
     // Use typeof, instanceof and some magic. It's enough to have
     // 12-13 unique types but you can find out in JS even more :)
-    const type = getType(value);
+    const type = typeof value;
 
     if (type === 'number') {
         if (isNaN(value)) {
@@ -96,30 +104,44 @@ const getRealType = (value) => {
         }
     }
 
-    if (type === 'object') {
-        if (value === null) {
-            return 'null';
-        }
-        if (Array.isArray(value)) {
-            return 'array';
-        }
-        if (value instanceof Date) {
-            return 'date';
-        }
-        if (value instanceof RegExp) {
-            return 'regexp';
-        }
-        if (value instanceof Set) {
-            return 'set';
-        }
+    if (value === null) {
+        return 'null';
     }
+    if (Array.isArray(value)) {
+        return 'array';
+    }
+    if (value instanceof Date) {
+        return 'date';
+    }
+    if (value instanceof RegExp) {
+        return 'regexp';
+    }
+    if (value instanceof Set) {
+        return 'set';
+    }
+    if (value instanceof Map) {
+        return 'map';
+    }
+    if (value instanceof Error) {
+        return 'error';
+    }
+    if (value instanceof ArrayBuffer) {
+        return 'arrayBuffer';
+    }
+    if (value instanceof DataView) {
+        return 'dataView';
+    }
+    if (value instanceof Promise) {
+        return 'promise';
+    }
+
     return type;
 };
 
 const getRealTypesOfItems = (arr) => {
     // Return array with real types of items of given array
     if (!Array.isArray(arr)) {
-        return [];
+        throw new TypeError('Passed parameter is not an array');
     }
     return arr.map((item) => getRealType(item));
 };
@@ -128,7 +150,7 @@ const everyItemHasAUniqueRealType = (arr) => {
     // Return true if there are no items in array
     // with the same real type
     if (!Array.isArray(arr)) {
-        return false;
+        throw new TypeError('Passed parameter is not an array');
     }
     const types = new Set();
     for (const item of arr) {
@@ -146,7 +168,7 @@ const countRealTypes = (arr) => {
     // with this type in the input array, sorted by type.
     // Like an Object.entries() result: [['boolean', 3], ['string', 5]]
     if (!Array.isArray(arr)) {
-        return [];
+        throw new TypeError('Passed parameter is not an array');
     }
     const result = new Map();
     for (const item of arr) {
@@ -159,7 +181,15 @@ const countRealTypes = (arr) => {
         }
     }
 
-    return [...result.entries()].sort();
+    return [...result.entries()].sort((a, b) => {
+        if (a[0] > b[0]) {
+            return 1;
+        }
+        if (a[0] < b[0]) {
+            return -1;
+        }
+        return 0;
+    });
 };
 
 // Tests
@@ -218,6 +248,12 @@ const knownTypes = [
     new Date(),
     new RegExp(),
     new Set(),
+    new Map(),
+    Symbol(''),
+    new Error(),
+    new ArrayBuffer(),
+    new DataView(new ArrayBuffer()),
+    new Promise(() => {}),
 ];
 
 test('Check basic types', getTypesOfItems(knownTypes), [
@@ -232,6 +268,12 @@ test('Check basic types', getTypesOfItems(knownTypes), [
     'object',
     'number',
     'number',
+    'object',
+    'object',
+    'object',
+    'object',
+    'symbol',
+    'object',
     'object',
     'object',
     'object',
@@ -251,6 +293,12 @@ test('Check real types', getRealTypesOfItems(knownTypes), [
     'date',
     'regexp',
     'set',
+    'map',
+    'symbol',
+    'error',
+    'arrayBuffer',
+    'dataView',
+    'promise',
     // What else?
 ]);
 
