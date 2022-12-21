@@ -5,35 +5,14 @@ const testBlock = (name) => {
     console.group(`# ${name}\n`);
 };
 
-const compareArrays = (a, b) => {
-    if (a === b) {
-        return true;
-    }
-    if (a.length !== b.length) {
-        return false;
-    }
-    for (let i = 0; i < a.length; i++) {
-        if (a[i] !== b[i]) {
-            if (Array.isArray(a[i]) && Array.isArray(b[i])) {
-                if (!compareArrays(a[i], b[i])) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-    }
-    return true;
-};
-
 const areEqual = (a, b) => {
     // Compare arrays of primitives
     // Remember: [] !== []
     if (a === b) {
         return true;
     }
-    if (Array.isArray(a) && Array.isArray(b)) {
-        return compareArrays(a, b);
+    if (Array.isArray(a) && Array.isArray(b) && a.length === b.length) {
+        return a.every((value, i) => areEqual(value, b[i]));
     }
     return false;
 };
